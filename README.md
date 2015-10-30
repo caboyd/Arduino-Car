@@ -20,3 +20,28 @@ Materials
 + Android Smartphone with Bluetooth
 + SainSmart Digital Analog Module V5 Sensor Shield (or Equivalent shield with multiple VCC, GND)
 + Miniature TTL Serial JPEG Camera with NTSC Video
+
+Instructions
+-----------
+###Setup###
+TBA
+###Construction###
+TBA
+###Installation###
+TBA
+
+Demonstration
+-------------
+TBA
+
+Troubleshooting
+--------------
+TBA
+
+Credits
+-------
+TBA
+
+Contact Me
+---------
+boyd111c@gmail.com
