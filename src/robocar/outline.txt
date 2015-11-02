@@ -1,0 +1,18 @@
+loop
+{
+ current time = millis;
+ distance = ping average (ping checker);
+ 
+ if (turning)
+  {
+  if(done turning(check end time))
+   move
+  }
+ if(moving)
+ {
+  if(distance too close)
+   turn until endtime
+   end time = current time + more time
+ }
+
+}
