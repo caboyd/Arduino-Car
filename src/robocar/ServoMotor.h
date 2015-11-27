@@ -16,17 +16,26 @@ public:
     }
 	void lookLeft()
 	{
-        write(155);
+        write(150);
 	}
 
 	void lookRight()
 	{
-        write(40);
+        write(30);
     }
         
-	
+	void peekLeft()
+    {
+        write(105);
+    }
+
+    void peekRight()
+    {
+        write(75);
+    }
 	void lookCenter()
 	{
-	    write(93);
+	    write(90);
 	}
 };
+
