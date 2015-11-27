@@ -1,8 +1,5 @@
-#define SENSOR_SERVO 9
-#define LEFT_MOTOR 6,13,12
-#define RIGHT_MOTOR 5,7,8
-#define PING_SENSOR 4,2,200
-#define TOO_CLOSE 20
+
+#include <SoftwareSerial.h>
 
 //Servo
 #include <Servo.h>
@@ -17,6 +14,24 @@
 //ultrasonic sensor library
 #include "NewPing.h"
 
+//Bluetooth device class
+#include "BTDevice.h"
+
+
+
+//Definitions------
+//Servo
+#define SENSOR_SERVO 9
+//Motors
+#define LEFT_MOTOR 6,13,12
+#define RIGHT_MOTOR 5,7,8
+//Sensor
+#define PING_SENSOR 4,2,200
+#define TOO_CLOSE 16
+//Bluetooth
+#define BT_DEVICE 10,11
+
+
 
 
 class RobotCar
@@ -26,15 +41,24 @@ private:
     Motor leftMotor;
     Motor rightMotor;
     PingSensor pingSensor;
+    BTDevice bTDevice;
     unsigned long endTime;
     enum enumstate {stateStopped, stateMoving, stateTurning};
     enumstate state;
-    bool looking;
+    unsigned long currentTime;
+    int pingDistance;
+    BTCommand::Command command;
+    BTCommand::Command lastCommand;
+    bool commandReceived;
+    bool autoToggled;
 public:
-    RobotCar() : sensorServo(SENSOR_SERVO), leftMotor(LEFT_MOTOR), rightMotor(RIGHT_MOTOR), pingSensor(PING_SENSOR)
+    RobotCar() : sensorServo(SENSOR_SERVO), leftMotor(LEFT_MOTOR), rightMotor(RIGHT_MOTOR), pingSensor(PING_SENSOR), bTDevice(BT_DEVICE)
     {
         state == stateStopped;
-        looking = false;
+        autoToggled = false;
+        currentTime = 0;
+        endTime = 0;
+        commandReceived = false;
     }
     void init()
     {
@@ -44,26 +68,86 @@ public:
     void run()
     {
         
-        unsigned long currentTime = millis();
-        Serial.println(currentTime);
-        Serial.print("        ");
-        Serial.println(endTime);
-        int pingDistance = pingSensor.averageDistances(pingSensor.getPingDistance());
-      //  Serial.println(pingDistance);
-        // Serial.println(pingDistance);
+        currentTime = millis();
+      //  Serial.println(currentTime);
+       // Serial.print("        ");
+      //  Serial.println(endTime);
+        pingDistance = pingSensor.averageDistances(pingSensor.getPingDistance());
+
+        commandReceived = bTDevice.getCommand(command);
+
+        if(commandReceived && command == BTCommand::AutoToggle)
+        {
+            state = stateStopped;
+            autoToggled = !autoToggled;
+        }
+        //Serial.println(autoToggled);
+        if(autoToggled)
+        {
+            autoRun();
+        }else
+        {
+            if(pingDistance <= TOO_CLOSE && lastCommand == BTCommand::Forward)
+            {
+                command = BTCommand::Stop;
+                stop();
+            }   
+            if(commandReceived)
+            {
+                lastCommand = command;
+                Serial.println(command);
+                switch(command)
+                {
+                    case BTCommand::AutoToggle:
+                        stop();
+                        break;
+                    case BTCommand::Forward:
+                        move(255);
+                        break;
+                    case BTCommand::Reverse:
+                        move(-255);
+                        break;
+                    case BTCommand::TurnLeft:
+                        turnLeft();
+                        break;
+                    case BTCommand::TurnRight:
+                        turnRight();
+                        break;
+                    case BTCommand::Stop:
+                        stop();
+                        break;
+                }
+            }
+        }
+    }
+
+    void autoRun()
+    {
         if(turning())
         {
-            
-            if(doneTurning(currentTime))
+            if(doneTurning())
             {
-                Serial.println(state);
                 move(255);
             }
         } else if(moving())
         {
+            
+            Serial.println(pingDistance);
+          /*  if((currentTime / 150) % 4 == 0 )
+            {
+                sensorServo.peekLeft();              
+            }
+            else if ((currentTime / 150) % 4 == 2 )
+            {
+                sensorServo.peekRight();
+            }else
+            {
+                sensorServo.lookCenter();
+            }
+            */
             if(pingDistance <= TOO_CLOSE)
             {
-                if(turning() == false)
+                if(turning() == false)//REMOVE THIS
                 {
                     stop();
                     bool b = decideLeftOrRight();
@@ -94,19 +178,19 @@ public:
         {
             move(255);
         }
-    
     }
-
+       
     bool decideLeftOrRight()
     {
+        delay(20);
         sensorServo.lookLeft();
-        delay(400);
+        delay(350);
         int left = pingSensor.getPingDistance();
         sensorServo.lookRight();
-        delay(400);
+        delay(450);
         int right = pingSensor.getPingDistance();
         sensorServo.lookCenter();
-        delay(400);
+        delay(20);
         if(left <= right)
             return 1; //represents turn right
         return 0;//turn left
@@ -125,12 +209,11 @@ public:
     {
         return (state == stateStopped);
     }
-    bool doneTurning(unsigned long currentTime)
+    bool doneTurning()
     {
         if(currentTime >= endTime)
         {
-            Serial.println(currentTime);
-            Serial.println(endTime);
+
             return true;
         }
         return false;
