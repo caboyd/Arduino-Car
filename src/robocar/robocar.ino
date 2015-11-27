@@ -80,6 +80,7 @@ public:
         {
             state = stateStopped;
             autoToggled = !autoToggled;
+            lastCommand = BTCommand::AutoToggle;
         }
         //Serial.println(autoToggled);
         if(autoToggled)
@@ -190,7 +191,7 @@ public:
         delay(450);
         int right = pingSensor.getPingDistance();
         sensorServo.lookCenter();
-        delay(20);
+        delay(200);
         if(left <= right)
             return 1; //represents turn right
         return 0;//turn left
