@@ -21,7 +21,7 @@
 // new life into these very affordable distance sensors. 
 //
 // FEATURES:
-// * Works with many different ultrasonic sensors: SR04, SRF05, SRF06, DYP-ME007, URM37 & Parallax PING)))™.
+// * Works with many different ultrasonic sensors: SR04, SRF05, SRF06, DYP-ME007, URM37 & Parallax PING)))â„¢.
 // * Compatible with the entire Arduino line-up, Teensy family (including $19 96Mhz 32 bit Teensy 3.0) and derivatives.
 // * Interface with all but the SRF06 sensor using only one Arduino pin.
 // * Doesn't lag for a full second if no ping/echo is received.
@@ -78,7 +78,7 @@
 //   Optimized for smaller compiled size (even smaller than sketches that
 //   don't use a library).
 //
-// 07/14/2012 v1.4 - Added support for the Parallax PING)))™ sensor. Interface
+// 07/14/2012 v1.4 - Added support for the Parallax PING)))â„¢ sensor. Interface
 //   with all but the SRF06 sensor using only one Arduino pin. You can also
 //   interface with the SRF06 using one pin if you install a 0.1uf capacitor
 //   on the trigger and echo pins of the sensor then tie the trigger pin to
@@ -223,3 +223,4 @@ class NewPing {
 
 
 #endif
+
