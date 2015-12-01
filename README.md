@@ -32,7 +32,15 @@ TBA
 
 Demonstration
 -------------
-TBA
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=UGoIHObZg50
+" target="_blank"><img src="http://img.youtube.com/vi/UGoIHObZg50/0.jpg"
+alt="Auto driving" width="240" height="180" border="10" /></a>
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=74hTZ711FFI
+" target="_blank"><img src="http://img.youtube.com/vi/74hTZ711FFI/0.jpg"
+alt="Arduino car with bluetooth camera" width="240" height="180" border="10" /></a>
+
 
 Troubleshooting
 --------------
