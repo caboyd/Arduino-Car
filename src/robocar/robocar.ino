@@ -17,6 +17,8 @@
 //Bluetooth device class
 #include "BTDevice.h"
 
+//Camera class
+#include "Adafruit_VC0706.h"
 
 
 //Definitions------
@@ -30,13 +32,17 @@
 #define TOO_CLOSE 16
 //Bluetooth
 #define BT_DEVICE 10,11
-
+#define BT_BAUD 115200
+//Camera
+#define CAMERA A5,A4
+SoftwareSerial cameraconnection =  SoftwareSerial(CAMERA);
 
 
 
 class RobotCar
 {
 private:
+    Adafruit_VC0706 cam;
     ServoMotor sensorServo;
     Motor leftMotor;
     Motor rightMotor;
@@ -51,38 +57,150 @@ private:
     BTCommand::Command lastCommand;
     bool commandReceived;
     bool autoToggled;
+    uint16_t jpglen;
+    bool sending;
 public:
-    RobotCar() : sensorServo(SENSOR_SERVO), leftMotor(LEFT_MOTOR), rightMotor(RIGHT_MOTOR), pingSensor(PING_SENSOR), bTDevice(BT_DEVICE)
+    RobotCar() : sensorServo(SENSOR_SERVO), leftMotor(LEFT_MOTOR), rightMotor(RIGHT_MOTOR), pingSensor(PING_SENSOR), bTDevice(BT_DEVICE), cam(&cameraconnection)
     {
         state == stateStopped;
         autoToggled = false;
         currentTime = 0;
         endTime = 0;
         commandReceived = false;
+        sending = false;
     }
     void init()
     {
         sensorServo.init();
-    }
+        bTDevice.init(BT_BAUD);
+        
+            // Try to locate the camera
+        if(cam.begin())
+        {
+            Serial.println("Camera Found:");
+        } else
+        {
+            Serial.println("No camera found?");
+            //return;
+        }
+       
+        
+        // Print out the camera version information (optional)
+        char *reply = cam.getVersion();
+        if(reply == 0)
+        {
+           Serial.println("Failed to get version");
+        } else
+        {
+           Serial.println("-----------------\n\r");
+           Serial.println(reply);
+           Serial.println("-----------------\n");
+        }
+            
+            // Set the picture size - you can choose one of 640x480, 320x240 or 160x120 
+        // Remember that bigger pictures take longer to transmit!
+        delay(200);
+        Serial.println("\nChanging image size. Wait .2 second");
+        //cam.setImageSize(VC0706_640x480);        // biggest
+        //cam.setImageSize(VC0706_320x240);        // medium
+        cam.setImageSize(VC0706_160x120);          // small
+        delay(200);
+        // You can read the size back from the camera (optional, but maybe useful?)
+        uint8_t imgsize = cam.getImageSize();
+        Serial.println("\nImage size: ");
+        if(imgsize == VC0706_640x480) Serial.println("\n640x480");
+        if(imgsize == VC0706_320x240) Serial.println("\n320x240");
+        if(imgsize == VC0706_160x120) Serial.println("\n160x120");
+    
+        delay(200);
+        cam.setCompression(90);
+        Serial.println("\nFailed to set compression");
+       
+        Serial.println("\nCompression set.");
+        Serial.println("\nCompression factor: ");
+        Serial.println(cam.getCompression());
+        delay(200);
+        char *c;
+        c = cam.setBaud57600();
+        Serial.println("\nSnap in 2 secs...");
+        delay(200);
 
+    
+    }
     void run()
     {
-        
+
         currentTime = millis();
-      //  Serial.println(currentTime);
-       // Serial.print("        ");
-      //  Serial.println(endTime);
+
         pingDistance = pingSensor.averageDistances(pingSensor.getPingDistance());
-
+        
         commandReceived = bTDevice.getCommand(command);
-
-        if(commandReceived && command == BTCommand::AutoToggle)
+        if(commandReceived)
+        Serial.println(command);
+        if(commandReceived )
         {
+            if(command == BTCommand::AutoToggle)
+            {
             state = stateStopped;
             autoToggled = !autoToggled;
             lastCommand = BTCommand::AutoToggle;
+            }else if(command ==BTCommand::StopAll)
+            {
+                state = stateStopped;
+                autoToggled = false;
+                lastCommand = BTCommand::Stop;
+                stop();
+            }
         }
-        //Serial.println(autoToggled);
+
+        if(!sendingPicture())
+        {
+            cam.restartSerial(&cameraconnection);
+            cam.takePicture();
+           //     bTDevice.bTSerial.write("Failed to snap!");
+           // else
+           //     bTDevice.bTSerial.write("Picture taken!");
+            delay(10);  
+
+            
+            // Get the size of the image (frame) taken  
+            jpglen = cam.frameLength();
+            //Convert 16bit jpeg length to 2 bytes
+            unsigned char jpeglenMSB = jpglen >> 8;
+            unsigned char jpeglenLSB = jpglen;
+
+            bTDevice.init(BT_BAUD);
+            //Commands to sync with android
+            bTDevice.bTSerial.write(217);
+            bTDevice.bTSerial.write(217);
+            bTDevice.bTSerial.write(217);
+            //Send 16 bit length as 2 bytes
+            bTDevice.bTSerial.write(jpeglenMSB);
+            bTDevice.bTSerial.write(jpeglenLSB);
+            //Command to sync with android
+            bTDevice.bTSerial.write(217);
+            sendPicture();
+        }
+
+        if(sendingPicture())
+        {
+            uint8_t *buffer;
+            uint8_t bytesToRead = min(32, jpglen); // change 32 to 64 for a speedup but may not work with all setups!
+            cam.restartSerial(&cameraconnection);
+            buffer = cam.readPicture(bytesToRead);
+            bTDevice.init(BT_BAUD);        
+            bTDevice.bTSerial.write(buffer, bytesToRead);
+            jpglen -= bytesToRead;
+
+            if(jpglen == 0)
+            {
+                doneSendingPicture();
+                cam.restartSerial(&cameraconnection);
+                cam.resumeVideo();
+                bTDevice.init(BT_BAUD);  
+            }
+        }
+
         if(autoToggled)
         {
             autoRun();
@@ -96,7 +214,7 @@ public:
             if(commandReceived)
             {
                 lastCommand = command;
-                Serial.println(command);
+
                 switch(command)
                 {
                     case BTCommand::AutoToggle:
@@ -133,19 +251,6 @@ public:
         } else if(moving())
         {
             
-            Serial.println(pingDistance);
-          /*  if((currentTime / 150) % 4 == 0 )
-            {
-                sensorServo.peekLeft();              
-            }
-            else if ((currentTime / 150) % 4 == 2 )
-            {
-                sensorServo.peekRight();
-            }else
-            {
-                sensorServo.lookCenter();
-            }
-            */
             if(pingDistance <= TOO_CLOSE)
             {
                 if(turning() == false)//REMOVE THIS
@@ -155,9 +260,7 @@ public:
                     currentTime = millis();
                     if(b)
                     {
-                       // Serial.println(state);
                         turnRight();
-                       // Serial.println(state);
                         endTime = currentTime + 1000;
                     }else
                     {
@@ -220,6 +323,20 @@ public:
         return false;
     }
 
+    bool sendingPicture()
+    {
+        return sending;
+    }
+
+    void sendPicture()
+    {
+        sending = true;
+    }
+
+    void doneSendingPicture()
+    {
+        sending = false;
+    }
     void move(int speed)
     {
         state = stateMoving;
@@ -255,8 +372,10 @@ RobotCar RobotCar;
 
 void setup()
 {
-   Serial.begin(9600);
+    Serial.begin(9600);    
     RobotCar.init();
+   
+    
 }
 
 void loop()

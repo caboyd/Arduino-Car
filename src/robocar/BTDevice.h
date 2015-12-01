@@ -8,26 +8,30 @@ namespace BTCommand
 {
 	enum Command
 	{
-		AutoToggle, Forward, Reverse, TurnLeft, TurnRight, Stop
+		AutoToggle, Forward, Reverse, TurnLeft, TurnRight, Stop, StopAll
 	};
 }
 
 class BTDevice
 {
-private:
+public:
 	SoftwareSerial bTSerial;
 public:
 
 	//Constructor
 	BTDevice(int rxPin, int txPin):bTSerial(rxPin,txPin)
-	{
-    bTSerial.begin(38400);
-    Serial.begin(9600);
+	{    
 	}
+
+    void init(long baud)
+    {
+      //  bTSerial.end();
+        bTSerial.begin(baud);
+    }
 
 	bool getCommand(BTCommand::Command &command)
 	{
-        
+        //Serial.println(bTSerial.available());
 		String msg = "";
 		bool beginRead = false;
 		char c;
@@ -35,7 +39,12 @@ public:
 		while(bTSerial.available() > 0 && beginRead == false)
 		{
 			c = bTSerial.read();
-           
+            Serial.println(c);
+            if(c == '!')
+            {
+                command = BTCommand::StopAll;
+                return true;
+            }
 			if(c == '{')
 				beginRead = true;
 		}
@@ -43,13 +52,14 @@ public:
 		//Read until end of message symbol }
 		while(bTSerial.available() > 0 && c != '}')
 		{
-         
 			c = bTSerial.read();
             if(c != '}')
 			    msg += c;
-         
 		}
 
+        if(c != '}')
+            msg = "5"; //bad data use stop
+            
 		//Properly formatted message received and 1 char long
 		if(c == '}' && msg.length() == 1)
 		{
