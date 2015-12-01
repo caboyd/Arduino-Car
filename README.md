@@ -26,7 +26,8 @@ Instructions
 ###Setup###
 TBA
 ###Construction###
-TBA
+![alt text](https://github.com/iwanttoeatyo/Arduino-Car/raw/master/images/2015-10-31%2020.37.37.jpg)
+
 ###Installation###
 TBA
 
