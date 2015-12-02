@@ -15,19 +15,14 @@ namespace BTCommand
 class BTDevice
 {
 public:
-	SoftwareSerial bTSerial;
-public:
 
 	//Constructor
-	BTDevice(int rxPin, int txPin):bTSerial(rxPin,txPin)
+	BTDevice(int rxPin, int txPin, long baud)
 	{    
+            Serial.begin(baud);
 	}
 
-    void init(long baud)
-    {
-      //  bTSerial.end();
-        bTSerial.begin(baud);
-    }
+
 
 	bool getCommand(BTCommand::Command &command)
 	{
@@ -36,10 +31,9 @@ public:
 		bool beginRead = false;
 		char c;
 		//Drop symbols until we read a { for start of message
-		while(bTSerial.available() > 0 && beginRead == false)
+		while(Serial.available() > 0 && beginRead == false)
 		{
-			c = bTSerial.read();
-            Serial.println(c);
+			c = Serial.read();
             if(c == '!')
             {
                 command = BTCommand::StopAll;
@@ -50,9 +44,9 @@ public:
 		}
 
 		//Read until end of message symbol }
-		while(bTSerial.available() > 0 && c != '}')
+		while(Serial.available() > 0 && c != '}')
 		{
-			c = bTSerial.read();
+			c = Serial.read();
             if(c != '}')
 			    msg += c;
 		}
@@ -90,11 +84,6 @@ public:
 		{
 			return false;
 		}
-	}
-
-	int available()
-	{
-		return (bTSerial.available());
 	}
 
 };
