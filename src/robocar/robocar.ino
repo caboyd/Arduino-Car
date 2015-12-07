@@ -1,10 +1,8 @@
-
 #include <SoftwareSerial.h>
 
 //Servo
 #include <Servo.h>
 #include "ServoMotor.h"
-
 
 //DC Motor class
 #include "Motor.h"
@@ -20,7 +18,6 @@
 //Camera class
 #include "Adafruit_VC0706.h"
 
-
 //Definitions------
 //Servo
 #define SENSOR_SERVO 11
@@ -35,8 +32,6 @@
 //Camera
 #define CAMERA A5,A4
 SoftwareSerial cameraconnection =  SoftwareSerial(CAMERA);
-
-
 
 class RobotCar
 {
@@ -71,8 +66,6 @@ class RobotCar
     void init()
     {
       sensorServo.init();
- 
-
       // Try to locate the camera
       if (cam.begin())
       {
@@ -80,36 +73,24 @@ class RobotCar
       } else
       {
        // Serial.println("No camera found?");
-        //return;
+       //return;
       }
-
-
       // Print out the camera version information (optional)
       char *reply = cam.getVersion();
-    /*  if (reply == 0)
-      {
-        Serial.println("Failed to get version");
-      } else
-      {
-        Serial.println("-----------------\n\r");
-        Serial.println(reply);
-        Serial.println("-----------------\n");
-      }
-*/
+
       // Set the picture size - you can choose one of 640x480, 320x240 or 160x120
       // Remember that bigger pictures take longer to transmit!
       delay(200);
-     // Serial.println("\nChanging image size. Wait .2 second");
       //cam.setImageSize(VC0706_640x480);        // biggest
       //cam.setImageSize(VC0706_320x240);        // medium
       cam.setImageSize(VC0706_160x120);          // small
+      
       delay(200);
       // You can read the size back from the camera (optional, but maybe useful?)
       uint8_t imgsize = cam.getImageSize();
-     // Serial.println("\nImage size: ");
-     // if (imgsize == VC0706_640x480) Serial.println("\n640x480");
+      //if (imgsize == VC0706_640x480) Serial.println("\n640x480");
       //if (imgsize == VC0706_320x240) Serial.println("\n320x240");
-    // if (imgsize == VC0706_160x120) Serial.println("\n160x120");
+      //if (imgsize == VC0706_160x120) Serial.println("\n160x120");
 
       delay(200);
       cam.setCompression(90);
@@ -123,17 +104,14 @@ class RobotCar
       c = cam.setBaud57600();
      // Serial.println("\nSnap in 2 secs...");
       delay(200);
-
-
     }
+    
     void run()
     {
-
       currentTime = millis();
-
       pingDistance = pingSensor.averageDistances(pingSensor.getPingDistance());
-
       commandReceived = bTDevice.getCommand(command);
+      
       if (commandReceived )
       {
         if (command == BTCommand::AutoToggle)
@@ -152,13 +130,8 @@ class RobotCar
 
       if (!sendingPicture())
       {
-        //cam.restartSerial(&cameraconnection);
         cam.takePicture();
-        //     bTDevice.Serial.write("Failed to snap!");
-        // else
-        //     bTDevice.Serial.write("Picture taken!");
         delay(10);
-
 
         // Get the size of the image (frame) taken
         jpglen = cam.frameLength();
@@ -167,7 +140,7 @@ class RobotCar
         unsigned char jpeglenLSB = jpglen;
 
         //Commands to sync with android
-        Serial.write(217);
+        Serial.write(217);  //217 = D9 in ASCII
         Serial.write(217);
         Serial.write(217);
         //Send 16 bit length as 2 bytes
@@ -182,26 +155,20 @@ class RobotCar
       {
         uint8_t *buffer;
         uint8_t bytesToRead = min(32, jpglen); // change 32 to 64 for a speedup but may not work with all setups!
-
-        //cam.restartSerial(&cameraconnection);
-        buffer = cam.readPicture(bytesToRead);
-
-        Serial.write(buffer, bytesToRead);
-        jpglen -= bytesToRead;
+        buffer = cam.readPicture(bytesToRead); // Read from camera
+        Serial.write(buffer, bytesToRead);  //Write to bluetooth
+        jpglen -= bytesToRead; //Decrement by length read from camera
 
         if (jpglen == 0)
         {
           doneSendingPicture();
-          //cam.restartSerial(&cameraconnection);
           cam.resumeVideo();
-
         }
       }
 
       if (autoToggled)
-      {
         autoRun();
-      } else
+      else
       {
         if (pingDistance <= TOO_CLOSE && lastCommand == BTCommand::Forward)
         {
@@ -211,7 +178,6 @@ class RobotCar
         if (commandReceived)
         {
           lastCommand = command;
-
           switch (command)
           {
             case BTCommand::AutoToggle:
@@ -250,35 +216,25 @@ class RobotCar
 
         if (pingDistance <= TOO_CLOSE)
         {
-          if (turning() == false) //REMOVE THIS
+          stop();
+          bool b = decideLeftOrRight();
+          currentTime = millis();
+          if (b)
           {
-            stop();
-            bool b = decideLeftOrRight();
-            currentTime = millis();
-            if (b)
-            {
-              turnRight();
-              endTime = currentTime + 1000;
-            } else
-            {
-              turnLeft();
-
-              endTime = currentTime + 1000;
-            }
+            turnRight();
+            endTime = currentTime + 1000;
+          } else
+          {
+            turnLeft();
+            endTime = currentTime + 1000;
           }
-
-        } else if (pingDistance <= TOO_CLOSE * 2)
-        {
-          move(140);
-        } else
-        {
+        }else if (pingDistance <= TOO_CLOSE * 2)
+          move(140); 
+        else
           move(255);
-        }
 
       } else if (stopped())
-      {
-        move(255);
-      }
+          move(255);
     }
 
     bool decideLeftOrRight()
@@ -297,7 +253,6 @@ class RobotCar
       return 0;//turn left
     }
 
-
     bool turning()
     {
       return (state == stateTurning);
@@ -313,10 +268,7 @@ class RobotCar
     bool doneTurning()
     {
       if (currentTime >= endTime)
-      {
-
         return true;
-      }
       return false;
     }
 
@@ -337,7 +289,6 @@ class RobotCar
     void move(int speed)
     {
       state = stateMoving;
-
       leftMotor.setSpeed(speed);
       rightMotor.setSpeed(speed);
     }
@@ -358,30 +309,24 @@ class RobotCar
 
     void stop()
     {
-      //state = stateStopped;
       leftMotor.setSpeed(0);
       rightMotor.setSpeed(0);
     }
 };
 
-
+//Create robotcar object
 RobotCar RobotCar;
 
 void setup()
 {
+  //Start Bluetooth serial
    Serial.begin(115200);
+  //Initialize robot car for servo and camera
   RobotCar.init();
-
-
 }
 
 void loop()
 {
   RobotCar.run();
-
-
-
-
-
 }
 
