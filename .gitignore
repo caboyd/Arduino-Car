@@ -3,3 +3,12 @@ src/robocar/examples/NewPingEventTimer/NewPingEventTimer.pde
 src/robocar/examples/NewPingExample/NewPingExample.pde
 src/robocar/examples/TimerExample/TimerExample.pde
 src/robocar/keywords.txt
+ArduRoboCar/*.iml
+ArduRoboCar/.gradle
+ArduRoboCar/local.properties
+ArduRoboCar/.idea/workspace.xml
+ArduRoboCar/.idea/libraries
+ArduRoboCar/.DS_Store
+ArduRoboCar/build
+ArduRoboCar/captures
+ArduRoboCar/app/build
