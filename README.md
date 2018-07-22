@@ -1,9 +1,9 @@
-#CS207 - Arduino-Car#
+CS207 - Arduino-Car
 License - GNU General Public License, version 2
 
 Overview
 --------
-This repository will contain the steps to build and create a smart Arduino Car:
+Smart Arduino Car:
 + Autonomous mode using Ultrasonic sensor for obstacle avoidance
 + Remote control through Bluetooth with Android smart phone
 + Camera to send photos to Android phone over Bluetooth
@@ -20,15 +20,6 @@ Materials
 + Android Smartphone with Bluetooth
 + SainSmart Digital Analog Module V5 Sensor Shield (or Equivalent shield with multiple VCC, GND)
 + Miniature TTL Serial JPEG Camera with NTSC Video
-
-Instructions
------------
-###Setup###
-TBA
-###Construction###
-TBA
-###Installation###
-TBA
 
 Images
 ------
@@ -47,14 +38,3 @@ alt="Auto driving" width="240" height="180" border="10" /></a>
 alt="Arduino car with bluetooth camera" width="240" height="180" border="10" /></a>
 
 
-Troubleshooting
---------------
-TBA
-
-Credits
--------
-TBA
-
-Contact Me
----------
-boyd111c@gmail.com
