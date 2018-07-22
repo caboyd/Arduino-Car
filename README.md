@@ -1,4 +1,5 @@
-CS207 - Arduino-Car
+# CS207 - Arduino-Car
+
 License - GNU General Public License, version 2
 
 Overview
